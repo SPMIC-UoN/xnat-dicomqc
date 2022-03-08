@@ -36,6 +36,7 @@ def check_str(parameter, value, operator, expected):
         return str(value) == expected
 
 def check_list(parameter, value, operator, expected):
+    expected = [int(v) for v in expected.strip("[]").split(",")]
     if operator == "==":
         return value == expected
 
@@ -141,6 +142,7 @@ TYPE_HANDLERS = {
     list : check_list,
     pydicom.multival.MultiValue : check_multival,
     int : check_int,
+    float : check_float,
     str: check_str,
 }
 
