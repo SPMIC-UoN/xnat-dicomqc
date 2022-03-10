@@ -147,8 +147,12 @@ TYPE_HANDLERS = {
 }
 
 indir = sys.argv[1]
-outdir = sys.argv[2]
-qc_conf = read_config(sys.argv[3])
+#outdir = sys.argv[2]
+if len(sys.argv) > 2:
+    config_fname = sys.argv[2]
+else:
+    config_fname = "dicomqc_conf.tsv"
+qc_conf = read_config(config_fname)
 
 for fname in os.listdir(indir):
     try:
