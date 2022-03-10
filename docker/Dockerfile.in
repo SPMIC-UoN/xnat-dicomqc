@@ -16,5 +16,6 @@ RUN cd /tmp && \
 RUN pip install pydicom
 
 ADD dicom_qc.py .
+ADD dicomqc_conf.tsv .
 
 
