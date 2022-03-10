@@ -1,73 +1,30 @@
 {
-    "name": "cmore-preproc", 
-    "command-line": "python cmore_preproc.py /input /output \"[DCM2NIIX_FLAGS]\" [METHOD]",
-    "image": "martincraig/cmore", 
-    "label": "cmore",
+    "name": "dicomqc", 
+    "description": "Runs simple DICOM tag based QC on an MRI",
+    "info-url": "", 
+    "label": "dicomqc",
+    "image": "martincraig/xnat-dicomqc", 
     "version": "0.0.1", 
     "schema-version": "1.0", 
-    "info-url": "", 
     "type": "docker", 
-    "description": "Runs preprocessing on a CMORE session",
+    "command-line": "python dicom_qc.py /input",
     "inputs": [
-        {
-            "name": "dcm2niix-flags",
-            "replacement-key": "[DCM2NIIX_FLAGS]",
-            "required": false,
-            "type": "string",
-            "default-value": "-m n -f %n_%p_%q -z y",
-            "description": "Flags for DCM2NIIX"
-        },
-        {
-            "name": "t2star-method",
-            "replacement-key": "[METHOD]",
-            "required": false,
-            "type": "string",
-            "default-value": "all",
-            "description": "Method for calculating T2* - loglin or 2p_exp or all"
-        }
     ],
     "outputs": [
-        {
-            "name": "t2star", 
-            "mount": "cmore-out",
-            "path" : "t2star",
-            "required": "false", 
-            "description": "T2* map"
-        },
-        {
-            "name": "b0map", 
-            "mount": "cmore-out",
-            "path" : "b0map",
-            "required": "false", 
-            "description": "B0 map"
-        },
-        {
-            "name": "nifti", 
-            "mount": "cmore-out",
-            "path" : "nifti",
-            "glob" : "*.nii.gz",
-            "required": "true", 
-            "description": "NIFTI images"
-        }
     ],
     "mounts": [
         {
             "writable": "false", 
             "path": "/input", 
             "name": "dicom-in"
-        },
-        {
-            "writable": "true", 
-            "path": "/output", 
-            "name": "cmore-out"
         }
     ], 
     "xnat": [
         {
-            "name": "cmore-preproc",
+            "name": "dicomqc",
             "contexts": ["xnat:imageScanData"],
-            "description": "Run CMORE preprocessing", 
-            "label": "cmore-preproc", 
+            "description": "Run DICOM tag QC on a session", 
+            "label": "dicomqc", 
             "external-inputs": [
                 {
                     "name": "scan", 
@@ -87,27 +44,6 @@
                 }
             ], 
             "output-handlers": [
-                {
-                    "name": "nifti-resource",
-                    "accepts-command-output": "nifti", 
-                    "type": "Resource", 
-                    "label": "NIFTI", 
-                    "as-a-child-of-wrapper-input": "scan"
-                },
-                {
-                    "name": "t2star-resource",
-                    "accepts-command-output": "t2star", 
-                    "type": "Resource", 
-                    "label": "T2STAR", 
-                    "as-a-child-of-wrapper-input": "scan"
-                },
-                {
-                    "name": "b0map-resource",
-                    "accepts-command-output": "b0map", 
-                    "type": "Resource", 
-                    "label": "B0MAP",
-                    "as-a-child-of-wrapper-input": "scan"
-                }
             ]
         }
     ]
