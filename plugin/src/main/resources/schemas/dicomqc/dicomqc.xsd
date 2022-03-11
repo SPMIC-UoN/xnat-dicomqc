@@ -1,0 +1,38 @@
+<xs:schema targetNamespace="http://github.com/spmic-uon/xnat-dicomqc" 
+    xmlns:xnat_dicomqc="http://github.com/spmic-uon/xnat-dicomqc"
+    xmlns:xnat="http://nrg.wustl.edu/xnat" 
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+    elementFormDefault="qualified" 
+    attributeFormDefault="unqualified">
+    <xs:import namespace="http://nrg.wustl.edu/xnat" schemaLocation="../xnat/xnat.xsd"/>
+    <xs:element name="DICOMQCData" type="xnat_dicomqc:DICOMQCData"/>
+    <xs:complexType name="DICOMQCData">
+        <xs:annotation>
+            <xs:documentation>ImageAssessor which encapsulates the output from running DICOMQC</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="xnat:mrAssessorData">
+                <xs:sequence>
+                    <xs:element name="dicomqcVersion" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>Version of the DICOMQC used</xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string"/>
+                        </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="overall_status" minOccurs="1" maxOccurs="1" type="xs:string"/>
+                    <xs:element name="scan" minOccurs="1" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="scan_id" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                                <xs:element name="passed_test" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                                <xs:element name="failed_test" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+</xs:schema>
