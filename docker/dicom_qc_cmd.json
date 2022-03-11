@@ -7,8 +7,29 @@
     "version": "0.0.1", 
     "schema-version": "1.0", 
     "type": "docker", 
-    "command-line": "python dicom_qc.py /input",
+    "command-line": "python dicom_qc.py /input dicomqc_conf.tsv #PROJECT_ID# #SUBJECT_ID# #SESSION_ID#",
     "inputs": [
+        {
+            "name": "session-id",
+            "description": "",
+            "type": "string",
+            "required": true,
+            "replacement-key": "#SESSION_ID#"
+        },
+        {
+            "name": "subject-id",
+            "description": "",
+            "type": "string",
+            "required": true,
+            "replacement-key": "#SUBJECT_ID#"
+        },
+        {
+            "name": "project-id",
+            "description": "",
+            "type": "string",
+            "required": true,
+            "replacement-key": "#PROJECT_ID#"
+        }
     ],
     "outputs": [
     ],
@@ -22,27 +43,64 @@
     "xnat": [
         {
             "name": "dicomqc",
-            "contexts": ["xnat:imageScanData"],
+            "contexts": ["xnat:imageSessionData"],
             "description": "Run DICOM tag QC on a session", 
             "label": "dicomqc", 
             "external-inputs": [
                 {
-                    "name": "scan", 
-                    "type": "Scan", 
+                    "name": "session", 
+                    "type": "Session", 
                     "required": true, 
-                    "description": "Input scan"
+                    "description": "Input scan",
+                    "provides-files-for-command-mount": "dicom-in",
+                    "load-children" : true
                 }
             ],
             "derived-inputs": [
                 {
-                    "name": "scan-dicoms",
-                    "type": "Resource",
-                    "derived-from-wrapper-input": "scan", 
-                    "matcher": "@.label == 'DICOM'", 
-                    "provides-files-for-command-mount": "dicom-in", 
-                    "description": "The DICOM resource on the scan"
+                    "name": "session-id",
+                    "type": "string",
+                    "required": true,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session",
+                    "derived-from-xnat-object-property": "id",
+                    "provides-value-for-command-input": "session-id"
+                },
+                {
+                    "name": "subject",
+                    "type": "Subject",
+                    "required": true,
+                    "user-settable": false,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session"
+                },
+                {
+                    "name": "subject-id",
+                    "type": "string",
+                    "required": true,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "subject",
+                    "derived-from-xnat-object-property": "id",
+                    "provides-value-for-command-input": "subject-id"
+                },
+                {
+                    "name": "project",
+                    "type": "Project",
+                    "required": true,
+                    "user-settable": false,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "session"
+                },
+                {
+                    "name": "project-id",
+                    "type": "string",
+                    "required": true,
+                    "load-children": true,
+                    "derived-from-wrapper-input": "project",
+                    "derived-from-xnat-object-property": "id",
+                    "provides-value-for-command-input": "project-id"
                 }
-            ], 
+            ],
             "output-handlers": [
             ]
         }
