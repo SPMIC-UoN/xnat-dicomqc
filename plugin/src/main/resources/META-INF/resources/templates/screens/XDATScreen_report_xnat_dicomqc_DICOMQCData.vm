@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("DICOMQCData Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+
+#set($pass_style = "color: #fff; background: green; text-align:center;")
+#set($fail_style = "color: #fff; background: red; text-align:center;")
+<div>
+    <h2>DICOMQC report</h2>
+
+	<TABLE width="100%">
+	    <TR>
+			<TD>
+				<TABLE>
+					<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/ID")</TD></TR>
+					<TR><TD>imageSession_ID</TD><TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/imageSession_ID")</TD></TR>
+					<TR><TD>project</TD><TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/project")</TD></TR>
+					<TR><TD>date</TD><TD>$!item.getProperty("xnat_dicomqc:DICOMQCData/date")</TD></TR>
+					<TR><TD>DICOMQC version</TD><TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/dicomqcVersion")</TD></TR>
+					<TR>
+					#set($overall_status=$!item.getStringProperty("xnat_dicomqc:DICOMQCData/overall_status"))
+					#if($overall_status == "PASS")
+					     #set($style=$pass_style)
+					#else
+					    #set($style=$fail_style)
+					#end
+						<TD>OVERALL STATUS</TD>
+						<TD style="$style">$overall_status</TD>
+					</TR>			
+				</TABLE>
+			</TD>
+			<TD>#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))</TD>
+		</TR>
+	</TABLE>
+
+	#set($xnat_dicomqc_DICOMQCData_scan_15_NUM_ROWS=$item.getChildItems("xnat_dicomqc:DICOMQCData/scan").size() - 1)
+	#if($xnat_dicomqc_DICOMQCData_scan_15_NUM_ROWS>=0)
+		#foreach($xnat_dicomqc_DICOMQCData_scan_15_COUNTER in [0..$xnat_dicomqc_DICOMQCData_scan_15_NUM_ROWS])
+<!-- BEGIN xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER] -->
+			<h2>SCAN: $!item.getStringProperty("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/scan_id")</h2>
+			<TABLE>
+				#set($xnat_dicomqc_DICOMQCData_scan_passed_test_16_NUM_ROWS=$item.getChildItems("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test").size() - 1)
+				#if($xnat_dicomqc_DICOMQCData_scan_passed_test_16_NUM_ROWS>=0)
+					#foreach($xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER in [0..$xnat_dicomqc_DICOMQCData_scan_passed_test_16_NUM_ROWS])
+<!-- BEGIN xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test[$xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER] -->
+				<TR>
+					<TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test[$xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER]/passed_test")</TD>
+					<TD style="$pass_style">PASS</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test[$xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER] -->
+					#end
+				#end
+			<TABLE>
+				#set($xnat_dicomqc_DICOMQCData_scan_failed_test_17_NUM_ROWS=$item.getChildItems("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test").size() - 1)
+				#if($xnat_dicomqc_DICOMQCData_scan_failed_test_17_NUM_ROWS>=0)
+					#foreach($xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER in [0..$xnat_dicomqc_DICOMQCData_scan_failed_test_17_NUM_ROWS])
+<!-- BEGIN xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test[$xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER] -->
+				<TR>
+					<TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test[$xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER]/failed_test")</TD>
+					<TD style="$fail_style">FAIL</TD>
+				</TR>
+<!-- END xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test[$xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER] -->
+					#end
+				#end
+			</TABLE>
+<!-- END xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER] -->
+		#end
+	#end
+</div><BR>
+#parse("/screens/ReportProjectSpecificFields.vm")
