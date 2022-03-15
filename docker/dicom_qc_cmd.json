@@ -51,7 +51,7 @@
                     "name": "session", 
                     "type": "Session", 
                     "required": true, 
-                    "description": "Input scan",
+                    "description": "Input session",
                     "provides-files-for-command-mount": "dicom-in",
                     "load-children" : true
                 }
