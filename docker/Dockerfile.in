@@ -14,6 +14,7 @@ RUN cd /tmp && \
 	make && make install
 
 RUN pip install pydicom
+RUN pip install git+https://github.com/spmic-uon/xnatc
 
 ADD dicom_qc.py .
 ADD dicomqc_conf.tsv .
