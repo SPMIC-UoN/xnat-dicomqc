@@ -42,7 +42,7 @@ $page.setVlinkColor($ui.vlink)
 	<TABLE>
 <!-- BEGIN scan -->
     #foreach ($scan in $item.getChildItems("xnat_dicomqc:DICOMQCData/scan"))
-		<TR><TD span="2"><b>SCAN: $!scan.getStringProperty("scan_id")</b></TD></TR>
+		<TR><TD span="2"><b>$!scan.getStringProperty("scan_id"): $!scan.getStringProperty("scan_type")</b></TD></TR>
 		#foreach ($pass in $scan.getChildItems("passed_test"))
 <!-- BEGIN pass -->
 		<TR>

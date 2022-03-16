@@ -26,6 +26,7 @@
                         <xs:complexType>
                             <xs:sequence>
                                 <xs:element name="scan_id" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                                <xs:element name="scan_type" type="xs:string" minOccurs="1" maxOccurs="1"/>
                                 <xs:element name="passed_test" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
                                 <xs:element name="warning" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
                                 <xs:element name="failed_test" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
