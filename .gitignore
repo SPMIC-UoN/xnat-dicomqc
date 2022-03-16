@@ -1,0 +1,3 @@
+docker/Dockerfile
+plugin/.gradle
+plugin/build
