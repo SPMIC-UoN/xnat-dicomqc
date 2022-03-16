@@ -8,7 +8,9 @@ $page.setVlinkColor($ui.vlink)
 #end
 
 #set($pass_style = "color: #fff; background: green; text-align:center;")
+#set($warn_style = "color: #000; background: yellow; text-align:center;")
 #set($fail_style = "color: #fff; background: red; text-align:center;")
+
 <div>
     <h2>DICOMQC report</h2>
 
@@ -37,39 +39,36 @@ $page.setVlinkColor($ui.vlink)
 		</TR>
 	</TABLE>
 
-	#set($xnat_dicomqc_DICOMQCData_scan_15_NUM_ROWS=$item.getChildItems("xnat_dicomqc:DICOMQCData/scan").size() - 1)
-	#if($xnat_dicomqc_DICOMQCData_scan_15_NUM_ROWS>=0)
-		#foreach($xnat_dicomqc_DICOMQCData_scan_15_COUNTER in [0..$xnat_dicomqc_DICOMQCData_scan_15_NUM_ROWS])
-<!-- BEGIN xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER] -->
-			<h2>SCAN: $!item.getStringProperty("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/scan_id")</h2>
-			<TABLE>
-				#set($xnat_dicomqc_DICOMQCData_scan_passed_test_16_NUM_ROWS=$item.getChildItems("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test").size() - 1)
-				#if($xnat_dicomqc_DICOMQCData_scan_passed_test_16_NUM_ROWS>=0)
-					#foreach($xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER in [0..$xnat_dicomqc_DICOMQCData_scan_passed_test_16_NUM_ROWS])
-<!-- BEGIN xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test[$xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER] -->
-				<TR>
-					<TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test[$xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER]/passed_test")</TD>
-					<TD style="$pass_style">PASS</TD>
-				</TR>
-			</TABLE>
-<!-- END xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/passed_test[$xnat_dicomqc_DICOMQCData_scan_passed_test_16_COUNTER] -->
-					#end
-				#end
-			<TABLE>
-				#set($xnat_dicomqc_DICOMQCData_scan_failed_test_17_NUM_ROWS=$item.getChildItems("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test").size() - 1)
-				#if($xnat_dicomqc_DICOMQCData_scan_failed_test_17_NUM_ROWS>=0)
-					#foreach($xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER in [0..$xnat_dicomqc_DICOMQCData_scan_failed_test_17_NUM_ROWS])
-<!-- BEGIN xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test[$xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER] -->
-				<TR>
-					<TD>$!item.getStringProperty("xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test[$xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER]/failed_test")</TD>
-					<TD style="$fail_style">FAIL</TD>
-				</TR>
-<!-- END xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER]/failed_test[$xnat_dicomqc_DICOMQCData_scan_failed_test_17_COUNTER] -->
-					#end
-				#end
-			</TABLE>
-<!-- END xnat_dicomqc:DICOMQCData/scan[$xnat_dicomqc_DICOMQCData_scan_15_COUNTER] -->
+	<TABLE>
+<!-- BEGIN scan -->
+    #foreach ($scan in $item.getChildItems("xnat_dicomqc:DICOMQCData/scan"))
+		<TR><TD span="2"><b>SCAN: $!scan.getStringProperty("scan_id")</b></TD></TR>
+		#foreach ($pass in $scan.getChildItems("passed_test"))
+<!-- BEGIN pass -->
+		<TR>
+			<TD>$!pass.getStringProperty("passed_test")</TD>
+			<TD style="$pass_style">PASS</TD>
+		</TR>
+<!-- END pass -->
 		#end
+		#foreach ($warn in $scan.getChildItems("warning"))
+<!-- BEGIN warn -->
+		<TR>
+			<TD>$!warn.getStringProperty("warning")</TD>
+			<TD style="$warn_style">WARNING</TD>
+		</TR>
+<!-- END warn -->
+		#end
+		#foreach ($fail in $scan.getChildItems("failed_test"))
+<!-- BEGIN fail -->
+		<TR>
+			<TD>$!fail.getStringProperty("failed_test")</TD>
+			<TD style="$fail_style">FAIL</TD>
+		</TR>
+<!-- END fail -->
+		#end
+<!-- END scan -->
 	#end
+	</TABLE>
 </div><BR>
 #parse("/screens/ReportProjectSpecificFields.vm")
