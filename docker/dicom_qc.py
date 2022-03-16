@@ -125,6 +125,7 @@ def check_file(dcm, qc_conf, scan_results):
     """
     series_desc = dcm[(0x0008, 0x103e)].value.lower()
     print(f"   - Series description: {series_desc}")
+    scan_results["type"] = series_desc.upper()
     matches = 0
     for conf in qc_conf:
         if not series_matches(series_desc, conf.series_names):
@@ -208,8 +209,9 @@ def make_xml(scan_results):
     for scan in scan_results:
         xml += "  <scan>\n"
         xml += f"    <scan_id>{scan['id']}</scan_id>\n"
+        xml += f"    <scan_type>{scan['type']}</scan_type>\n"
         for passed_test in scan["passes"]:
-            text = passed_test.replace("<", "&lt;")
+            text = passed_test.replace("<", "[").replace(">", "]")
             xml += f"    <passed_test>{text}</passed_test>\n"
         for warning in scan["warnings"]:
             text = warning.replace("<", "&lt;")
@@ -229,6 +231,7 @@ def upload_xml(xml):
     """
     host, user, password = os.environ["XNAT_HOST"], os.environ["XNAT_USER"], os.environ["XNAT_PASS"]
     print(f"Uploading XML to {host}")
+    print(xml)
     proj, subj, exp = sys.argv[3:]
     #host = host.replace("http://", "https://") # FIXME hack
     os.environ["CURL_CA_BUNDLE"] = "" # FIXME Hack for cert validation disable
@@ -291,6 +294,7 @@ def read_config(fname):
 def main():
     if len(sys.argv) != 6:
         sys.stderr.write("Usage: dicom_qc.py <indir> <conf_fname> <project id> <subject id> <session id>\n")
+        sys.exit(1)
     indir = sys.argv[1]
     config_fname = sys.argv[2]
     qc_conf = read_config(config_fname)
