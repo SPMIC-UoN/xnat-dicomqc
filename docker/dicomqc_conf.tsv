@@ -17,7 +17,7 @@ Series description matchers	Series description exclusion	Vendors	Software Versio
 "MOLLI, T2 star mapping,MTR,T2W,mDixon"		GE		"(0028,0010)"	Rows	==	256			
 "T1map,T1map flipped,T2_MAPPING,BASE,FAIR,pCASL,DWI,DWI flipped,B0"		GE		"(0028,0010)"	Columns	==	128			
 "MOLLI, T2 star mapping,MTR,T2W,mDixon"		GE		"(0028,0010)"	Columns	==	256			
-ASL				"(0020, 0105)"	Time points	==	30			
+ASL	PCASL			"(0020, 0105)"	Time points	==	30			
 T2 star mapping		Philips		"(0018, 0091)"	Number of echoes	==	12			
 T2 star mapping		GE		"(0019, 107E)"	"Number of echoes	"	==	12			
 T2 star mapping				"(0018, 0081)"	Echo time	contain	"[4.6, 9.2]"			
@@ -107,7 +107,7 @@ mDIXON				"(0018, 0095)"	Bandwidth 	range	"[1000, 2100]"	2034
 "T1map,T1map_RespTrig_flipped, BASE,FAIR,PCASL"				"(0018, 0095)"	Bandwidth 	range	"[1800, 2200]"	2049		
 "T1map,T1map_RespTrig_flipped, BASE,FAIR,PCASL"				"(0018, 0081)"	Echo time	range	"[25, 35]"	29		
 T1map_RespTrig_flipped				"(0020, 0105)"	Number of averages	==	1			
-T1map				"(0020, 0105)"	Number of averages	==	20			
+T1map	resptrig_flipped			"(0020, 0105)"	Number of averages	==	20			
 BASE				"(0020, 0105)"	Number of averages	==	2			
 "SOURCE-PCASL_SE_EPI_750,SOURCE-PCASL_SE_EPI_500,SOURCE-PCASL_SE_EPI_1000, SOURCE-COR_FAIR_SE_EPI_400,SOURCE-COR_FAIR_SE_EPI_750,SOURCE-COR_FAIR_SE_EPI_1000    "				"(0020, 0105)"	Time points	==	8			
 "SOURCE-COR_FAIR_SE_EPI_1500,SOURCE-PCASL_SE_EPI_1500"				"(0020, 0105)"	Time points	==	25			
