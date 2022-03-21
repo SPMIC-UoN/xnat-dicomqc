@@ -111,12 +111,12 @@ T1map	resptrig_flipped			"(0020, 0105)"	Number of averages	==	20
 BASE				"(0020, 0105)"	Number of averages	==	2			
 "SOURCE-PCASL_SE_EPI_750,SOURCE-PCASL_SE_EPI_500,SOURCE-PCASL_SE_EPI_1000, SOURCE-COR_FAIR_SE_EPI_400,SOURCE-COR_FAIR_SE_EPI_750,SOURCE-COR_FAIR_SE_EPI_1000    "				"(0020, 0105)"	Time points	==	8			
 "SOURCE-COR_FAIR_SE_EPI_1500,SOURCE-PCASL_SE_EPI_1500"				"(0020, 0105)"	Time points	==	25			
-AO				"(0018, 0081)"	Echo time	range	"[2, 4]"	2.5		
-AO				"(0018, 1314)"	Flip angle	==	15			0
-AO				"(0018, 0080)"	TR	range	"[2, 4]"	3.8		
-AO				"(0018, 0095)"	Bandwidth 	range	"[1000, 2000]"	1436		
-AO				"(2005, 140f)/(0018, 9081)"	Partial Fourier	==	NO			
-AO				"(2005, 140f)/(0018, 9069)"	Parallel acquisition 	==	2			
+AO	B0MAP			"(0018, 0081)"	Echo time	range	"[2, 4]"	2.5		
+AO	B0MAP			"(0018, 1314)"	Flip angle	==	15			0
+AO	B0MAP			"(0018, 0080)"	TR	range	"[2, 4]"	3.8		
+AO	B0MAP			"(0018, 0095)"	Bandwidth 	range	"[1000, 2000]"	1436		
+AO	B0MAP			"(2005, 140f)/(0018, 9081)"	Partial Fourier	==	NO			
+AO	B0MAP			"(2005, 140f)/(0018, 9069)"	Parallel acquisition 	==	2			
 TOF				ignore						
 B_TRANCE				ignore						
 B1MAP				ignore						
