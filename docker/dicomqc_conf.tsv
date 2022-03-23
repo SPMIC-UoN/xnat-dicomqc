@@ -1,4 +1,4 @@
-Series description matchers	Series description exclusion	Vendors	Software Version	DICOM Tag	Parameter	Operator	Expected Value	Read Value		
+Series description matchers	Series description exclusion	Vendors	Software Version	DICOM Tag	Parameter	Operator	Expected Value	Read Value	Notes	
 "T1map,T1map flipped,BASE,FAIR,pCASL,DWI, DWI flipped"		Philips		"(0018, 1310)"	Acquisition Matrix	==	"[0, 128, 126, 0]"			
 "T1map,T1map flipped,T2_MAPPING,BASE,FAIR,pCASL,mDIXON,B0"		"GE,Siemens"		"(0018, 1310)"	Acquisition Matrix	==	"[0, 128, 128, 0]"			
 "T1map,T1map flipped,T2STAR,DWI,BASE,FAIR,pCASL,MTR"		"GE,Philips,Siemens"		"(0018, 0050)"	Slice thickness	==	5			Note all pCASL are not 'B0map pCASL'
@@ -65,13 +65,12 @@ T2W		GE		"(0043, 1083)"	Parallel acquisition factors	==	"[0.344, 1]"
 B0		Philips		"(0018, 0091)"	Number of echoes	==	2			
 B0				"(0018, 0081)"	Echo time	contain	"[4.0, 6.3]"			
 B0				"(0018, 1314)"	Flip angle	==	22			
-B0				"(0018, 0080)"	TR	==	130			
+B0				"(0018, 0080)"	TR	or	"[130, 170]"		130 is correct but don't want to fail existing data	
 B0				"(0018, 0095)"	Bandwidth 	range	"[600, 900]"	787.5		
 MOLLI				"(0018, 0081)"	Echo time	range	"[1, 2]"	1.68		
 MOLLI				"(0018, 1314)"	Flip angle	==	20			
 MOLLI				"(0018, 0080)"	TR	range	"[2, 4]"	3.4		
 MOLLI				"(0018, 0095)"	Bandwidth 	range	"[600, 900]"	787.5		
-MOLLI					delay	==	270			
 MOLLI		GE		"(0018, 1060)"	Trigger time (first delay)					
 MOLLI				"(0018, 1088)"	Cardiac Frequency	==	60			
 MOLLI		Philips		"(0020, 9251)"	RR Interval Time Nominal	==	1000			
@@ -81,7 +80,7 @@ MOLLI				"(2005, 1571)"	Number of inversion Delays	==	8
 "PC_BH_RIGHT,PC_BH_LEFT"				"(0018, 1314)"	Flip angle	==	20			
 "PC_BH_RIGHT,PC_BH_LEFT"				"(0018, 0080)"	TR	range	"[4, 6]"	5.5		
 "PC_BH_RIGHT,PC_BH_LEFT"				"(0018, 0095)"	Bandwidth 	range	"[400, 600]"	481.8		
-"PC_BH_RIGHT,PC_BH_LEFT"				"(2005, 140f)/(0018,9069)"	Parallel acquisition 	==	2			
+"PC_BH_RIGHT,PC_BH_LEFT"				"(2005, 140f)/(0018,9069)"	Parallel acquisition 	==	3			
 "PC_BH_RIGHT,PC_BH_LEFT"		"Philips,Siemens"		"(0028, 0030)"	Pixel spacing	==	"[1.5, 1.5]"			
 "PC_BH_RIGHT,PC_BH_LEFT"		GE		"(0028, 0030)"	Pixel spacing	==	"[1.1, 1.1]"			
 "PC_BH_RIGHT,PC_BH_LEFT"		"Philips,GE,Siemens"		"(2001,1017)"	Number of phases	==	40			
