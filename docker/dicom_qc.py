@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import csv
@@ -21,6 +22,16 @@ def float_matches(f1, f2, num_sf):
     f1 = float(('%.' + str(num_sf) + 'g') % f1)
     f2 = float(('%.' + str(num_sf) + 'g') % f2)
     return abs(f1 - f2) < FLOAT_TOLERANCE
+USAGE = "dicom_qc.py -i <indir> -c <conf_fname> --project <project id> --subject <subject id> --session <session id>"
+
+class ArgumentParser(argparse.ArgumentParser):
+    def __init__(self, **kwargs):
+        argparse.ArgumentParser.__init__(self, prog="rodent_anat", add_help=False, **kwargs)
+        self.add_argument("--input", help="Input directory")
+        self.add_argument("--config", help="Config file name")
+        self.add_argument("--project", help="XNAT project")
+        self.add_argument("--subject", help="XNAT subject")
+        self.add_argument("--session", help="XNAT session")
 
 def check_float(parameter, value, operator, expected):
     if operator == "==":
@@ -258,7 +269,7 @@ def check_session(sessiondir, vendor_series_mapping, vendor_checks):
     for scan in os.listdir(scansdir):
         print(f" - Checking {scan}")
 
-        scandir = os.path.join(scansdir, scan, "DICOM")
+        scandir = os.path.join(scansdir, scan, "resources", "DICOM")
         if not os.path.isdir(scandir):
             print(f"   - No DICOMs")
             continue
@@ -336,12 +347,12 @@ XML_FOOTER = """
 </DICOMQCData>
 """
 
-def make_xml(session_results):
+def make_xml(session_results, args):
     """
     Create XML assessor document
     """
     xml = XML_HEADER
-    xml += "  <xnat:label>DICOMQC_%s</xnat:label>" % sys.argv[5]
+    xml += "  <xnat:label>DICOMQC_%s</xnat:label>" % args.session
     xml += "  <xnat:date>%s</xnat:date>\n" % datetime.datetime.today().strftime('%Y-%m-%d')
     overall_pass = not any([scan["fails"] for scan in session_results.values()])
     if overall_pass:
@@ -367,7 +378,7 @@ def make_xml(session_results):
     xml += XML_FOOTER
     return xml
 
-def upload_xml(xml):
+def upload_xml(xml, args):
     """
     Upload new assessor to XNAT
 
@@ -378,13 +389,14 @@ def upload_xml(xml):
     host, user, password = os.environ["XNAT_HOST"], os.environ["XNAT_USER"], os.environ["XNAT_PASS"]
     print(f"Uploading XML to {host}")
     print(xml)
-    proj, subj, exp = sys.argv[3:]
     #host = host.replace("http://", "https://") # FIXME hack
     os.environ["CURL_CA_BUNDLE"] = "" # FIXME Hack for cert validation disable
-        
+    with open("temp.xml", "w") as f:
+        f.write(xml)
+
     with open("temp.xml", "r") as f:
         files = {'file': f}
-        r = requests.post("%s/data/projects/%s/subjects/%s/experiments/%s/assessors/" % (host, proj, subj, exp), files=files, auth=(user, password))
+        r = requests.post("%s/data/projects/%s/subjects/%s/experiments/%s/assessors/" % (host, args.project, args.subject, args.session), files=files, auth=(user, password))
         if r.status_code != 200:
             sys.stderr.write(xml)
             raise RuntimeError(f"Failed to create assessor: {r.text}")
@@ -480,6 +492,18 @@ def read_excel_config(fname):
 
     return vendor_series_mapping, vendor_checks
         
+def get_qc_conf(args):
+    fname = args.config
+    if not fname:
+        print("Downloading config from XNAT")
+        fname = "downloaded_config.xlsx"
+        with requests.get("%s/" % os.environ["XNAT_HOST"], auth=(os.environ["XNAT_USER"], os.environ["XNAT_PASS"]), stream=True) as r: # FIXME
+            r.raise_for_status()
+            with open(fname, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192): 
+                    f.write(chunk)
+    return read_excel_config(fname)
+
 def read_config(fname):
     """
     Read TSV configuration file
@@ -515,22 +539,18 @@ def read_config(fname):
     return qc_conf
 
 def main():
-    if len(sys.argv) != 6:
-        sys.stderr.write("Usage: dicom_qc.py <indir> <conf_fname> <project id> <subject id> <session id>\n")
-        sys.exit(1)
-    indir = sys.argv[1]
-    config_fname = sys.argv[2]
-    vendor_series_mapping, vendor_checks = read_excel_config(config_fname)
-    
+    args = ArgumentParser().parse_args()
+    vendor_series_mapping, vendor_checks = get_qc_conf(args)
+
     found_session = False
-    for path, dirs, files in os.walk(indir):
+    for path, dirs, files in os.walk(args.input):
         if "scans" in [d.lower() for d in dirs]:
             if not found_session:
                 found_session = True
                 session_results = check_session(path, vendor_series_mapping, vendor_checks)
                 session_results = normalise_session(session_results)
-                xml = make_xml(session_results)
-                upload_xml(xml)
+                xml = make_xml(session_results, args)
+                upload_xml(xml, args)
             else:
                 print("WARN: Found another session: {path} - ignoring")
 
