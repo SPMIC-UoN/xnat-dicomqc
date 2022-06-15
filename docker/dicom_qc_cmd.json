@@ -7,7 +7,7 @@
     "version": "0.0.1", 
     "schema-version": "1.0", 
     "type": "docker", 
-    "command-line": "python dicom_qc.py /input ukrin_conf.xlsx #PROJECT_ID# #SUBJECT_ID# #SESSION_ID#",
+    "command-line": "python dicom_qc.py --input /input #PROJECT_ID# #SUBJECT_ID# #SESSION_ID#",
     "inputs": [
         {
             "name": "session-id",
