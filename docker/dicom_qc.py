@@ -390,7 +390,6 @@ def upload_xml(xml, args):
     print(f"Uploading XML to {host}")
     print(xml)
     #host = host.replace("http://", "https://") # FIXME hack
-    os.environ["CURL_CA_BUNDLE"] = "" # FIXME Hack for cert validation disable
     with open("temp.xml", "w") as f:
         f.write(xml)
 
@@ -540,6 +539,7 @@ def read_config(fname):
     return qc_conf
 
 def main():
+    os.environ["CURL_CA_BUNDLE"] = "" # FIXME Hack for cert validation disable
     args = ArgumentParser().parse_args()
     vendor_series_mapping, vendor_checks = get_qc_conf(args)
 
