@@ -269,7 +269,7 @@ def check_session(sessiondir, vendor_series_mapping, vendor_checks):
     for scan in os.listdir(scansdir):
         print(f" - Checking {scan}")
 
-        scandir = os.path.join(scansdir, scan, "resources", "DICOM")
+        scandir = os.path.join(scansdir, scan, "DICOM")
         if not os.path.isdir(scandir):
             print(f"   - No DICOMs")
             continue
