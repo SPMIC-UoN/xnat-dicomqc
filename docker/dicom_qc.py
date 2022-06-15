@@ -497,7 +497,8 @@ def get_qc_conf(args):
     if not fname:
         print("Downloading config from XNAT")
         fname = "downloaded_config.xlsx"
-        with requests.get("%s/" % os.environ["XNAT_HOST"], auth=(os.environ["XNAT_USER"], os.environ["XNAT_PASS"]), stream=True) as r: # FIXME
+        with requests.get("%s/data/projects/%s/resources/dicomqc/files/dicomqc_conf.xlsx" % (os.environ["XNAT_HOST"], args.project),
+                          auth=(os.environ["XNAT_USER"], os.environ["XNAT_PASS"]), stream=True) as r:
             r.raise_for_status()
             with open(fname, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192): 
