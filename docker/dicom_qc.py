@@ -1,3 +1,6 @@
+"""
+DICOM_QC: Simple DICOM based quality control for XNAT MR sessions
+"""
 import argparse
 import os
 import sys
@@ -15,15 +18,6 @@ FLOAT_TOLERANCE = 0.001
 KNOWN_VENDORS = ["philips", "siemens", "ge"]
 IGNORE_SCAN = 0
 
-def expected_num_sf(floatstr):
-    return len(floatstr.strip().replace(".", "").replace("-", "").lstrip("0"))
-
-def float_matches(f1, f2, num_sf):
-    f1 = float(('%.' + str(num_sf) + 'g') % f1)
-    f2 = float(('%.' + str(num_sf) + 'g') % f2)
-    return abs(f1 - f2) < FLOAT_TOLERANCE
-USAGE = "dicom_qc.py -i <indir> -c <conf_fname> --project <project id> --subject <subject id> --session <session id>"
-
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self, **kwargs):
         argparse.ArgumentParser.__init__(self, prog="rodent_anat", add_help=False, **kwargs)
@@ -33,7 +27,35 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument("--subject", help="XNAT subject")
         self.add_argument("--session", help="XNAT session")
 
-def check_float(parameter, value, operator, expected):
+def expected_num_sf(floatstr):
+    """
+    :return: Number of significant figures specified by a floating point
+             number in a string, e.g. '1.43' would return 3
+    """
+    return len(floatstr.strip().replace(".", "").replace("-", "").lstrip("0"))
+
+def float_matches(f1, f2, num_sf):
+    """
+    :return: True if f1 and f2 are the same to within num_sf significant figures
+    """
+    f1 = float(('%.' + str(num_sf) + 'g') % f1)
+    f2 = float(('%.' + str(num_sf) + 'g') % f2)
+    return abs(f1 - f2) < FLOAT_TOLERANCE
+
+def check_float(value, operator, expected):
+    """
+    Check if a floating point parameter passes a check
+
+    :param value: Floating point number
+    :param operator: Type of test, == for equality to within a number of SF to be determined,
+                     range for within a certain max/min range, and contain for values within
+                     an arithmetic progression
+    :param expected: Expected value(s) as a string. Either a float whose number of SF 
+                     determines the number of SF we will test to, or a sequence of two
+                     numbers for contain and range
+
+    :return: True if value passes the test, False otherwise
+    """
     if operator == "==":
         # Compare floats to the number of decimal places given in the expected value
         num_sf = expected_num_sf(expected)
@@ -55,18 +77,50 @@ def check_float(parameter, value, operator, expected):
         else:
             return False
 
-def check_int(parameter, value, operator, expected):
+def check_int(value, operator, expected):
+    """
+    Check if an integer parameter passes a test
+
+    :param value: Integer
+    :param operator: Type of test, == for equality, range for within a certain max/min range
+    :param expected: Expected value(s) as a string. Either an integer or a sequence of two
+                     integers for range
+
+    :return: True if value passes the test, False otherwise
+    """
     if operator == "==":
         return value == int(expected)
     elif operator == "range":
         expected = [int(v) for v in expected.strip("[]").split(",")]
         return value >= expected[0] and value <= expected[1]
 
-def check_str(parameter, value, operator, expected):
+def check_str(value, operator, expected):
+    """
+    Check if a string passes a test
+
+    :param value: Integer
+    :param operator: Type of test, currently only == for equality is supported
+    :param expected: Expected value
+
+    :return: True if value passes the test, False otherwise
+    """
     if operator == "==":
         return value == expected
 
-def check_list(parameter, value, operator, expected):
+def check_list(value, operator, expected):
+    """
+    Check if a list passes a test
+
+    :param value: List of floating point numbers
+    :param operator: Type of test, == for equality to within a number of SF to be determined,
+                     range for within a certain max/min range, and contain for values within
+                     an arithmetic progression
+    :param expected: Expected value(s) as a string. Either a float whose number of SF 
+                     determines the number of SF we will test to, or a sequence of two
+                     numbers for contain and range
+
+    :return: True if value passes the test, False otherwise
+    """
     expected = expected.strip("[]").split(",")
     num_sf = max([expected_num_sf(v) for v in expected])
     expected = [float(v) for v in expected]
@@ -98,6 +152,13 @@ TYPE_HANDLERS = {
 def check_value(parameter, actual, operator, expected, scan_results, is_warning):
     """
     Check if the value of a parameter matches the specified test
+
+    :param parameter: Name of parameter
+    :param actual: Actual value in native Python type (int, float, list etc)
+    :param operator: Operator (==, contain, range)
+    :param expected: Expected value(s) expressed as a string (possibly containing a sequence)
+    :param scan_results: Scan results dictionary to be updated with result of test
+    :param is_warning: If True, failure is to be treated as a warning
     """
     t = type(actual)
     check = f"{parameter} {actual} {operator} {expected}"
@@ -105,10 +166,10 @@ def check_value(parameter, actual, operator, expected, scan_results, is_warning)
     if t in TYPE_HANDLERS:
         if operator == "or":
             possibles = [v for v in expected.strip("[]").split(",")]
-            result = any([TYPE_HANDLERS[t](parameter, actual, "==", possible) for possible in possibles])
+            result = any([TYPE_HANDLERS[t](actual, "==", possible) for possible in possibles])
         else:
-            result = TYPE_HANDLERS[t](parameter, actual, operator, expected)
-       
+            result = TYPE_HANDLERS[t](actual, operator, expected)
+
         if result is None:
             scan_warning(f"No result for {check} type {t}", scan_results)
         elif result:
@@ -121,7 +182,26 @@ def check_value(parameter, actual, operator, expected, scan_results, is_warning)
         print(f"No handler for data type {t} parameter {parameter} '{actual}'".replace("<", "[").replace(">", "]"))
         scan_results["warnings"].add(f"No handler for data type {t} parameter {parameter}")
 
+def scan_pass(check, scan_results):
+    if check not in scan_results["passes"]:
+        print(f"   - PASS: {check}")
+        scan_results["passes"].add(check)
+
+def scan_fail(check, scan_results):
+    if check not in scan_results["fails"]:
+        print(f"   - FAIL: {check}")
+        scan_results["fails"].add(check)
+
+def scan_warning(warning, scan_results):
+    if warning not in scan_results["warnings"]:
+        print(f"   - WARN: {warning}")
+        scan_results["warnings"].add(warning)
+
 def tag_from_text(txt):
+    """
+    Turn text representing a DICOM tag into a tuple of integers 
+    for matching against pydicom structure
+    """
     txt = txt.lower().strip()
     if txt == "ignore":
         # 'ignore' is a special key which means matching scans should not be checked
@@ -134,8 +214,7 @@ def tag_from_text(txt):
 
 def find_tag(ds, tag):
     """
-    Find a tag in the data set, allowing for
-    nested tags
+    Find a tag in the data set, allowing for nested tags
     """
     vals = []
     for elem in ds:
@@ -183,6 +262,10 @@ def series_matches(series_desc, series_match, series_exclude):
     return match
 
 def convert_value(dcm_value, vr):
+    """
+    Convert a dicom string value into a native Python
+    type depending on the DICOM VR (Value Representation)
+    """
     if vr in ("DS", "FL", "FD"):
         return float(dcm_value)
     elif vr in ("IS", "LO", "SH", "US"):
@@ -198,6 +281,10 @@ def convert_value(dcm_value, vr):
         print("WARN: Unrecognized DICOM type", vr, dcm_value, type(dcm_value))
 
 def convert_type(elem):
+    """
+    Convert a dicom string value into a native Python
+    type depending on both its given type and the Value Representation value
+    """
     dcm_type = type(elem.value)
     if dcm_type in (int, float, str):
         return elem.value
@@ -211,21 +298,6 @@ def convert_type(elem):
         return [convert_value(v, elem.VR) for v in elem.value]
     else:
         return convert_value(elem.value, elem.VR)
-
-def scan_pass(check, scan_results):
-    if check not in scan_results["passes"]:
-        print(f"   - PASS: {check}")
-        scan_results["passes"].add(check)
-
-def scan_fail(check, scan_results):
-    if check not in scan_results["fails"]:
-        print(f"   - FAIL: {check}")
-        scan_results["fails"].add(check)
-
-def scan_warning(warning, scan_results):
-    if warning not in scan_results["warnings"]:
-        print(f"   - WARN: {warning}")
-        scan_results["warnings"].add(warning)
 
 def check_file(dcm, std_name, checks, scan_results):
     """
@@ -539,8 +611,19 @@ def read_config(fname):
     return qc_conf
 
 def main():
-    os.environ["CURL_CA_BUNDLE"] = "" # FIXME Hack for cert validation disable
+    """
+    Main script entry poin
+    """
     args = ArgumentParser().parse_args()
+    if not os.path.isdir(args.input):
+        print(f"ERROR: Input directory {args.input} not specified or does not exist")
+        sys.exit(1)
+
+    # Hack to disable certificate validation for HTTPS connections. This is required
+    # becuase the certificate used for UoN servers are not always signed by a CA that
+    # is recognized by the fixed set of CA certificates built in to python requests.
+    os.environ["CURL_CA_BUNDLE"] = ""
+
     vendor_series_mapping, vendor_checks = get_qc_conf(args)
 
     found_session = False
