@@ -20,6 +20,7 @@ matching different scans having similar descriptions (e.g. T1_map and T1_map_fli
  - Notes: Free-text explanation, not used by code
 
 Sheet 2 (Checks)
+----------------
 
 This worksheet defines the checks that will be run on each scan. Scans are
 identified only by the standardized names defined in the first worksheet.
