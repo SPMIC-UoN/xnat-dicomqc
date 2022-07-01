@@ -20,7 +20,7 @@ IGNORE_SCAN = 0
 
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self, **kwargs):
-        argparse.ArgumentParser.__init__(self, prog="rodent_anat", add_help=False, **kwargs)
+        argparse.ArgumentParser.__init__(self, prog="dicomqc", add_help=False, **kwargs)
         self.add_argument("--input", help="Input directory")
         self.add_argument("--config", help="Config file name")
         self.add_argument("--project", help="XNAT project")
