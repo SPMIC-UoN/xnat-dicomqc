@@ -62,7 +62,9 @@ be enabled. Default settings can also be added
 
 9. Upload project QC definition
 
-This is an Excel document describing the tests to be run.
+This is an Excel document describing the tests to be run. It should be uploaded as a file at the project level
+in the folder `dicomqc` with the file name `dicomqc_conf.xlsx`. An example configuration file can be found
+in the `config` directory.
 
 10. Run the command
 
