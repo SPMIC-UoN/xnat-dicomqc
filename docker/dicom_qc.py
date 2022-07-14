@@ -285,19 +285,25 @@ def convert_type(elem):
     Convert a dicom string value into a native Python
     type depending on both its given type and the Value Representation value
     """
-    dcm_type = type(elem.value)
-    if dcm_type in (int, float, str):
-        return elem.value
-    elif dcm_type == list:
-        return [convert_value(v, elem.VR) for v in elem.value]
-    elif dcm_type == pydicom.valuerep.DSfloat:
-        return float(elem.value)
-    elif dcm_type == pydicom.valuerep.IS:
-        return int(elem.value)
-    elif dcm_type == pydicom.multival.MultiValue:
-        return [convert_value(v, elem.VR) for v in elem.value]
-    else:
-        return convert_value(elem.value, elem.VR)
+    try:
+        dcm_type = type(elem.value)
+        if elem.value is None:
+            return None
+        elif dcm_type in (int, float, str):
+            return elem.value
+        elif dcm_type == list:
+            return [convert_value(v, elem.VR) for v in elem.value]
+        elif dcm_type == pydicom.valuerep.DSfloat:
+            return float(elem.value)
+        elif dcm_type == pydicom.valuerep.IS:
+            return int(elem.value)
+        elif dcm_type == pydicom.multival.MultiValue:
+            return [convert_value(v, elem.VR) for v in elem.value]
+        else:
+            return convert_value(elem.value, elem.VR)
+    except Exception as exc:
+        print(f"WARN: Failed to convert DCM value: {dcm_type} {elem.value} {elem.VR} {exc}")
+        return None
 
 def check_file(dcm, std_name, checks, scan_results):
     """
