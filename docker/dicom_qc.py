@@ -9,6 +9,7 @@ import types
 import datetime
 import requests
 import json
+import traceback
 from collections import OrderedDict
 
 import pandas as pd
@@ -640,7 +641,12 @@ def main():
                 session_results = check_session(path, vendor_series_mapping, vendor_checks)
                 session_results = normalise_session(session_results)
                 xml = make_xml(session_results, args)
-                upload_xml(xml, args)
+                try:
+                    upload_xml(xml, args)
+                except:
+                    print("Failed to upload XML")
+                    print(xml)
+                    traceback.print_exc()
             else:
                 print("WARN: Found another session: {path} - ignoring")
 
