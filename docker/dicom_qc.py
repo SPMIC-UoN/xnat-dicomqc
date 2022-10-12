@@ -626,6 +626,14 @@ def main():
         print(f"ERROR: Input directory {args.input} not specified or does not exist")
         sys.exit(1)
 
+    try:
+        with open("version.txt") as f:
+            version = f.read()
+    except IOError:
+        version = "(unknown)"
+
+    print(f"DICOMQC v{version}")
+
     # Hack to disable certificate validation for HTTPS connections. This is required
     # becuase the certificate used for UoN servers are not always signed by a CA that
     # is recognized by the fixed set of CA certificates built in to python requests.
