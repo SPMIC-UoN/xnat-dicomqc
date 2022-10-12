@@ -16,6 +16,7 @@ RUN cd /tmp && \
 RUN pip install pydicom pandas openpyxl
 RUN pip install git+https://github.com/spmic-uon/xnatc
 
+ADD version.txt
 ADD dicom_qc.py .
 ADD ukrin_conf.xlsx .
 
