@@ -477,19 +477,26 @@ def upload_xml(xml, args):
     with open("temp.xml", "r") as f:
         files = {'file': f}
         url = "%s/data/projects/%s/subjects/%s/experiments/%s/assessors/" % (host, args.project, args.subject, args.session)
-        LOG.info(f"Post URL: {url}")
-        r = requests.post(url, files=files, auth=(user, password))
-        if r.status_code == 409:
-            LOG.info("ImgQC assessor already exists - will delete and replace")
-            delete_url = url + f"DICOMQC_{args.session}"
-            r = requests.delete(delete_url, auth=(user, password), verify=False)
-            if r.status_code == 200:
+        while True:
+            print(f"Post URL: {url}")
+            r = requests.post(url, files=files, auth=(user, password), verify=False)
+            if r.status_code in (301, 302):
                 f.seek(0)
-                r = requests.post(url, files=files, auth=(user, password), verify=False)
+                url = r.headers["Location"]
+                continue
 
-        if r.status_code != 200:
-            sys.stderr.write(xml)
-            raise RuntimeError(f"Failed to create assessor: {r.text}")
+            elif r.status_code == 409:
+                LOG.info("ImgQC assessor already exists - will delete and replace")
+                delete_url = url + f"IMGQC_{args.session}"
+                r = requests.delete(delete_url, auth=(user, password), verify=False)
+                if r.status_code == 200:
+                    f.seek(0)
+                    continue
+
+            if r.status_code != 200:
+                sys.stderr.write(xml)
+                raise RuntimeError(f"Failed to create assessor: {r.status_code} {r.text}")
+            break
 
 def get_alias():
     """
