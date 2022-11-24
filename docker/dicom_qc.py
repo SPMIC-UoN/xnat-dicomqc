@@ -479,17 +479,20 @@ def upload_xml(xml, args):
         url = "%s/data/projects/%s/subjects/%s/experiments/%s/assessors/" % (host, args.project, args.subject, args.session)
         while True:
             print(f"Post URL: {url}")
-            r = requests.post(url, files=files, auth=(user, password), verify=False)
+            r = requests.post(url, files=files, auth=(user, password), verify=False, allow_redirects=False)
             if r.status_code in (301, 302):
+                LOG.info("Redirect: {r.headers['Location']}")
                 f.seek(0)
                 url = r.headers["Location"]
                 continue
 
             elif r.status_code == 409:
                 LOG.info("ImgQC assessor already exists - will delete and replace")
-                delete_url = url + f"IMGQC_{args.session}"
+                delete_url = url + f"DICOMQC_{args.session}"
+                LOG.info(f"Delete URL: {delete_url}")
                 r = requests.delete(delete_url, auth=(user, password), verify=False)
                 if r.status_code == 200:
+                    LOG.info("Delete successful - re-posting")
                     f.seek(0)
                     continue
 
