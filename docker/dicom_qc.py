@@ -474,7 +474,9 @@ def upload_xml(xml, args):
 
     with open("temp.xml", "r") as f:
         files = {'file': f}
-        r = requests.post("%s/data/projects/%s/subjects/%s/experiments/%s/assessors/" % (host, args.project, args.subject, args.session), files=files, auth=(user, password))
+        url = "%s/data/projects/%s/subjects/%s/experiments/%s/assessors/" % (host, args.project, args.subject, args.session)
+        print(f"Post URL: {url}")
+        r = requests.post(url, files=files, auth=(user, password))
         if r.status_code != 200:
             sys.stderr.write(xml)
             raise RuntimeError(f"Failed to create assessor: {r.text}")
