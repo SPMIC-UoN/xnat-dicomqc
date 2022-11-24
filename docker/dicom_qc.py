@@ -185,7 +185,7 @@ def check_value(parameter, actual, operator, expected, scan_results, is_warning)
         else:
             scan_fail(check, scan_results)
     else:
-        LOG.warn(f"No handler for data type {t} parameter {parameter} '{actual}'".replace("<", "[").replace(">", "]"))
+        LOG.warning(f"No handler for data type {t} parameter {parameter} '{actual}'".replace("<", "[").replace(">", "]"))
         scan_results["warnings"].add(f"No handler for data type {t} parameter {parameter}")
 
 def scan_pass(check, scan_results):
@@ -214,7 +214,7 @@ def tag_from_text(txt):
         return (IGNORE_SCAN, IGNORE_SCAN)
     ids = txt.strip("(").strip(")").split(",")
     if len(ids) != 2:
-        LOG.warn("Invalid tag: %s" % txt)
+        LOG.warning("Invalid tag: %s" % txt)
         return None
     return (int(ids[0], 16), int(ids[1], 16))
 
@@ -284,7 +284,7 @@ def convert_value(dcm_value, vr):
         except:
             return int(dcm_value)
     else:
-        LOG.warn("Unrecognized DICOM type", vr, dcm_value, type(dcm_value))
+        LOG.warning("Unrecognized DICOM type", vr, dcm_value, type(dcm_value))
 
 def convert_type(elem):
     """
@@ -308,7 +308,7 @@ def convert_type(elem):
         else:
             return convert_value(elem.value, elem.VR)
     except Exception as exc:
-        LOG.warn(f"Failed to convert DCM value: {dcm_type} {elem.value} {elem.VR} {exc}")
+        LOG.warning(f"Failed to convert DCM value: {dcm_type} {elem.value} {elem.VR} {exc}")
         return None
 
 def check_file(dcm, std_name, checks, scan_results):
@@ -355,7 +355,7 @@ def check_session(sessiondir, vendor_series_mapping, vendor_checks):
 
         scandir = os.path.join(scansdir, scan, "DICOM")
         if not os.path.isdir(scandir):
-            LOG.warn(f"   - No DICOMs")
+            LOG.warning(f"   - No DICOMs")
             continue
 
         scan_results = {"id" : scan, "passes" : set(), "fails" : set(), "warnings" : set()}
@@ -374,7 +374,7 @@ def check_session(sessiondir, vendor_series_mapping, vendor_checks):
                         series_mappings = vendor_series_mapping[vendor]
                         checks = vendor_checks[vendor]
                         if vendor not in vendor_series_mapping or vendor not in vendor_checks:
-                            LOG.warn(f" - WARN: Vendor {vendor} not found in config for {fname}")
+                            LOG.warning(f" - WARN: Vendor {vendor} not found in config for {fname}")
                             ignore_scan = True
                             break
 
@@ -400,7 +400,7 @@ def check_session(sessiondir, vendor_series_mapping, vendor_checks):
                     LOG.info(f"   - Checking DICOM: {fname} for vendor {vendor}")
                     check_file(dcm, std_name, checks, scan_results)
             except pydicom.errors.InvalidDicomError:
-                LOG.warn(f"   - {fname} for scan {scan} was not a DICOM file")
+                LOG.warning(f"   - {fname} for scan {scan} was not a DICOM file")
 
         if not ignore_scan:
             session_results[scan] = scan_results
@@ -497,7 +497,7 @@ def get_alias():
     """
     r = requests.get("%s/data/services/tokens/issue" % os.environ["XNAT_HOST"], auth=(os.environ["XNAT_USER"], os.environ["XNAT_PASS"]))
     if r.status_code != 200:
-        LOG.warn("Error getting alias: ", r.text)
+        LOG.warning("Error getting alias: ", r.text)
         sys.exit(1)
     else:
         result = json.loads(r.text)
@@ -515,7 +515,7 @@ def _get_vendor_list(vendors_str):
             if vendor:
                 vendor_list.append(vendor)
             else:
-                LOG.warn(f"Unrecognized vendor in configuration file: {vendor_str}")
+                LOG.warning(f"Unrecognized vendor in configuration file: {vendor_str}")
     return vendor_list
 
 def read_excel_config(fname):
@@ -578,7 +578,7 @@ def read_excel_config(fname):
 
         for name in check.series_match + check.series_exclude:
             if all([name not in std_name for std_name in std_names]):
-                LOG.warn(f"Unmatched series name in checks: {name}")
+                LOG.warning(f"Unmatched series name in checks: {name}")
 
     return vendor_series_mapping, vendor_checks
         
@@ -625,7 +625,7 @@ def read_config(fname):
                         qc_conf[vendor] = []
                     qc_conf[vendor].append(conf)
                 else:
-                    LOG.warn(f"Unrecognized vendor in configuration file: {vendor_str}")
+                    LOG.warning(f"Unrecognized vendor in configuration file: {vendor_str}")
 
     return qc_conf
 
@@ -670,7 +670,7 @@ def main():
                     LOG.error(xml)
                     traceback.print_exc()
             else:
-                LOG.warn("Found another session: {path} - ignoring")
+                LOG.warning("Found another session: {path} - ignoring")
 
 if __name__ == "__main__":
     main()
