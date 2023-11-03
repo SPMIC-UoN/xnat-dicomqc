@@ -6,19 +6,16 @@ from collections import OrderedDict
 import csv
 import types
 import datetime
-import json
 import logging
 import os
-import requests
 import sys
 import traceback
-import urllib3
 
 LOG = logging.getLogger(__name__)
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import pandas as pd
 import pydicom
+import xnat_nott
 
 FLOAT_TOLERANCE = 0.001
 KNOWN_VENDORS = ["philips", "siemens", "ge"]
@@ -29,8 +26,6 @@ class ArgumentParser(argparse.ArgumentParser):
         argparse.ArgumentParser.__init__(self, prog="dicomqc", add_help=False, **kwargs)
         self.add_argument("--input", help="Input directory")
         self.add_argument("--config", help="Config file name")
-        self.add_argument("--project", help="XNAT project")
-        self.add_argument("--subject", help="XNAT subject")
         self.add_argument("--session", help="XNAT session")
 
 def expected_num_sf(floatstr):
@@ -465,54 +460,13 @@ def make_xml(session_results, args):
 def upload_xml(xml, args):
     """
     Upload new assessor to XNAT
-
-    FIXME delete if already exists
     """
     with open("temp.xml", "w") as f:
         f.write(xml)
-    host, user, password = os.environ["XNAT_HOST"], os.environ["XNAT_USER"], os.environ["XNAT_PASS"]
-    LOG.info(f"Uploading XML to {host}")
+    LOG.info(f"Uploading XML to {args.host}")
     LOG.info(xml)
-
-    with open("temp.xml", "r") as f:
-        files = {'file': f}
-        url = "%s/data/projects/%s/subjects/%s/experiments/%s/assessors/" % (host, args.project, args.subject, args.session)
-        while True:
-            print(f"Post URL: {url}")
-            r = requests.post(url, files=files, auth=(user, password), verify=False, allow_redirects=False)
-            if r.status_code in (301, 302):
-                LOG.info("Redirect: {r.headers['Location']}")
-                f.seek(0)
-                url = r.headers["Location"]
-                continue
-
-            elif r.status_code == 409:
-                LOG.info("ImgQC assessor already exists - will delete and replace")
-                delete_url = url + f"DICOMQC_{args.session}"
-                LOG.info(f"Delete URL: {delete_url}")
-                r = requests.delete(delete_url, auth=(user, password), verify=False)
-                if r.status_code == 200:
-                    LOG.info("Delete successful - re-posting")
-                    f.seek(0)
-                    continue
-
-            if r.status_code != 200:
-                sys.stderr.write(xml)
-                raise RuntimeError(f"Failed to create assessor: {r.status_code} {r.text}")
-            break
-
-def get_alias():
-    """
-    Get user alias token FIXME not necessary and not currently used?
-    """
-    r = requests.get("%s/data/services/tokens/issue" % os.environ["XNAT_HOST"], auth=(os.environ["XNAT_USER"], os.environ["XNAT_PASS"]))
-    if r.status_code != 200:
-        LOG.warning("Error getting alias: ", r.text)
-        sys.exit(1)
-    else:
-        result = json.loads(r.text)
-        LOG.info(result)
-        return result["alias"], result["secret"]
+    url = "data/projects/%s/subjects/%s/experiments/%s/assessors/" % (args.project, args.subject, args.session)
+    xnat_nott.xnat_upload(args, url, "temp.xml", replace_assessor=f"DICOMQC_{args.session}")
 
 def _get_vendor_list(vendors_str):
     vendors =  [v.strip().lower() for v in vendors_str.split(",")]
@@ -593,17 +547,14 @@ def read_excel_config(fname):
     return vendor_series_mapping, vendor_checks
         
 def get_qc_conf(args):
-    fname = args.config
-    if not fname:
+    local_fname = args.config
+    if not local_fname:
         LOG.info("Downloading config from XNAT")
-        fname = "downloaded_config.xlsx"
-        with requests.get("%s/data/projects/%s/resources/dicomqc/files/dicomqc_conf.xlsx" % (os.environ["XNAT_HOST"], args.project),
-                          auth=(os.environ["XNAT_USER"], os.environ["XNAT_PASS"]), stream=True) as r:
-            r.raise_for_status()
-            with open(fname, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192): 
-                    f.write(chunk)
-    return read_excel_config(fname)
+        url = "data/projects/%s/resources/dicomqc/files/dicomqc_conf.xlsx" % args.project
+        local_fname = "downloaded_config.xlsx"
+        xnat_nott.xnat_download(args, url, local_fname=local_fname)
+
+    return read_excel_config(local_fname)
 
 def read_config(fname):
     """
@@ -658,10 +609,15 @@ def main():
 
     LOG.info(f"DICOMQC v{version}")
 
-    # Hack to disable certificate validation for HTTPS connections. This is required
-    # becuase the certificate used for UoN servers are not always signed by a CA that
-    # is recognized by the fixed set of CA certificates built in to python requests.
-    os.environ["CURL_CA_BUNDLE"] = ""
+    xnat_nott.get_host_url(args)
+    xnat_nott.get_credentials(args)
+    xnat_nott.xnat_login(args)
+    proj, subj, _sess = xnat_nott.get_all_from_session_id(args, args.session)
+    args.project = proj['ID']
+    args.subject = subj['ID']
+    print(f" - Session: {args.session}")
+    print(f" - Subject: {args.subject}")
+    print(f" - Project: {args.project}")
 
     vendor_series_mapping, vendor_checks = get_qc_conf(args)
 

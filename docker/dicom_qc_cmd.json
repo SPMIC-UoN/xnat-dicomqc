@@ -7,7 +7,7 @@
     "version": "0.0.1", 
     "schema-version": "1.0", 
     "type": "docker", 
-    "command-line": "python dicom_qc.py --input /input --project #PROJECT_ID# --subject #SUBJECT_ID# --session #SESSION_ID#",
+    "command-line": "python dicom_qc.py --input /input --session #SESSION_ID#",
     "inputs": [
         {
             "name": "session-id",
@@ -15,20 +15,6 @@
             "type": "string",
             "required": true,
             "replacement-key": "#SESSION_ID#"
-        },
-        {
-            "name": "subject-id",
-            "description": "",
-            "type": "string",
-            "required": true,
-            "replacement-key": "#SUBJECT_ID#"
-        },
-        {
-            "name": "project-id",
-            "description": "",
-            "type": "string",
-            "required": true,
-            "replacement-key": "#PROJECT_ID#"
         }
     ],
     "outputs": [
@@ -65,40 +51,6 @@
                     "derived-from-wrapper-input": "session",
                     "derived-from-xnat-object-property": "id",
                     "provides-value-for-command-input": "session-id"
-                },
-                {
-                    "name": "subject",
-                    "type": "Subject",
-                    "required": true,
-                    "user-settable": false,
-                    "load-children": true,
-                    "derived-from-wrapper-input": "session"
-                },
-                {
-                    "name": "subject-id",
-                    "type": "string",
-                    "required": true,
-                    "load-children": true,
-                    "derived-from-wrapper-input": "subject",
-                    "derived-from-xnat-object-property": "id",
-                    "provides-value-for-command-input": "subject-id"
-                },
-                {
-                    "name": "project",
-                    "type": "Project",
-                    "required": true,
-                    "user-settable": false,
-                    "load-children": true,
-                    "derived-from-wrapper-input": "session"
-                },
-                {
-                    "name": "project-id",
-                    "type": "string",
-                    "required": true,
-                    "load-children": true,
-                    "derived-from-wrapper-input": "project",
-                    "derived-from-xnat-object-property": "id",
-                    "provides-value-for-command-input": "project-id"
                 }
             ],
             "output-handlers": [
