@@ -1,5 +1,5 @@
 # Dockerfile to install UKAT
-FROM python:3.7
+FROM python:3.12
 
 # Install Dependencies
 RUN apt-get update && apt-get upgrade -y && \
