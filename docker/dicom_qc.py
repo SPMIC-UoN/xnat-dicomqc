@@ -91,6 +91,7 @@ def main():
                 session_results = check_session(path, vendor_series_mapping, vendor_checks)
                 session_results = normalise_session(session_results)
                 xml = make_xml(session_results, args)
+                LOG.info(xml)
                 if args.upload:
                     try:
                         upload_xml(xml, args)
@@ -150,8 +151,8 @@ def parse_excel_config(fname, sheet=0):
             cols["expected"] = idx
             cols[idx] = "expected"
         elif "read" in colname:
-            cols["read"] = idx
-            cols[idx] = "read"
+            cols["standard"] = idx
+            cols[idx] = "standard"
         elif "param" in colname:
             cols["parameter"] = idx
             cols[idx] = "parameter"
@@ -196,7 +197,7 @@ def parse_excel_config(fname, sheet=0):
                 setattr(mapping, col, [])
 
         # Single value
-        for col in ("operator", "read", "parameter", "name", "filter", "expected", "warn", "index"):
+        for col in ("operator", "standard", "parameter", "name", "filter", "expected", "warn", "index"):
             if col in cols:
                 setattr(mapping, col,  row[cols[col]].strip().lower())
             else:
@@ -328,15 +329,10 @@ def check_value(actual, check, scan_results):
     :param scan_results: Scan results dictionary to be updated with result of test
     :param is_warning: If True, failure is to be treated as a warning
     """    
-    TYPE_HANDLERS = {
-        list : _check_list,
-        int : _check_int,
-        float : _check_float,
-        str: _check_str,
-    }
-
     t = type(actual)
     check_txt = f"{check.parameter} {actual} {check.operator} {check.expected}"
+    if check.standard:
+        check_txt += f" (std: {check.standard})"
     LOG.info(f"   - Checking: {check_txt}")
     if t in TYPE_HANDLERS:
         if check.operator == "or":
@@ -345,18 +341,26 @@ def check_value(actual, check, scan_results):
         else:
             result = TYPE_HANDLERS[t](actual, check.operator, check.expected, check.index)
 
+        if check.standard:
+            result_standard = TYPE_HANDLERS[t](actual, "==", check.standard, check.index)
+        else:
+            result_standard = True
+
         if result is None:
             _scan_warning(f"No result for {check_txt} type {t}", scan_results)
+        elif result and not result_standard:
+            _scan_warning(check_txt, scan_results)
         elif result:
             _scan_pass(check_txt, scan_results)
         elif check.warn:
             _scan_warning(check_txt, scan_results)
         else:
             _scan_fail(check_txt, scan_results)
+        return result
     else:
         LOG.warning(f"No handler for data type {t} parameter {check.parameter} '{actual}'".replace("<", "[").replace(">", "]"))
         scan_results["warnings"].add(f"No handler for data type {t} parameter {check.parameter}")
-
+        return False
 
 def normalise_session(session_results):
     """
@@ -392,7 +396,7 @@ def make_xml(session_results, args):
         xml += "  <scan>\n"
         xml += f"    <scan_id>{scan['id']}</scan_id>\n"
         xml += f"    <scan_type>{scan['type']}</scan_type>\n"
-        #xml += f"    <std_name>{scan['std_name']}</std_name>\n"
+        xml += f"    <std_name>{scan['std_name']}</std_name>\n"
         for passed_test in scan["passes"]:
             text = passed_test.replace("<", "[").replace(">", "]")[:200]
             xml += f"    <passed_test>{text}</passed_test>\n"
@@ -542,7 +546,6 @@ def _check_list(value, operator, expected, index=None):
             return True
         elif operator == "range":
             if index:
-                print("index:", index)
                 value = [value[int(index)]]
             if len(expected) == 1:
                 expected = [expected[0], expected[0]]
@@ -673,11 +676,13 @@ def filter_matches(dcm, filter_str):
         LOG.warning(f"No value for tag in filter expression: {filter_str}")
         return False
     value = convert_type(tag_value)
-    LOG.info(f"   - Checking {value} == {expected}")
-    if str(value).lower() == expected.lower():
-        LOG.info("   - Filter matched")
+    match = TYPE_HANDLERS[type(value)](value, "==", expected)
+    if match:
+        LOG.info(f"   - Filter matched: {value} == {expected}")
         return True
-    return False
+    else:
+        LOG.info(f"   - Filter not matched: {value} != {expected}")
+        return False
 
 def convert_value(dcm_value, vr):
     """
@@ -727,6 +732,13 @@ def convert_type(elem):
     except Exception as exc:
         LOG.warning(f"Failed to convert DCM value: {dcm_type} {elem.value} {elem.VR} {exc}")
         return None
+
+TYPE_HANDLERS = {
+    list : _check_list,
+    int : _check_int,
+    float : _check_float,
+    str: _check_str,
+}
 
 
 if __name__ == "__main__":
