@@ -41,6 +41,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument('--xnat', dest="host", help='xnat host URL. If not specified will use $XNAT_HOST environment variable')
         self.add_argument('--user', help='XNAT user name. If not specified will use credentials from $HOME.netrc or prompt for username')
         self.add_argument('--password', help='XNAT password. If not specified will use credentials from $HOME.netrc or prompt for password')
+        self.add_argument('--debug', help='Enable debug logging', action='store_true', default=False)
 
 
 def main():
@@ -48,7 +49,7 @@ def main():
     Main script entry poin
     """
     args = ArgumentParser().parse_args()
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if args.debug else logging.INFO)
 
     try:
         with open("version.txt") as f:
@@ -95,8 +96,8 @@ def main():
                 if args.upload:
                     try:
                         upload_xml(xml, args)
-                    except:
-                        LOG.error("Failed to upload XML")
+                    except Exception as exc:
+                        LOG.error(f"Failed to upload XML: {exc}", exc_info=True)
                         LOG.error(xml)
             else:
                 LOG.warning("Found another session: {path} - ignoring")
@@ -208,7 +209,7 @@ def parse_excel_config(fname, sheet=0):
                 vendor_series_mapping[vendor] = []
             vendor_series_mapping[vendor].append(mapping)
 
-    LOG.info(vendor_series_mapping.keys())
+    LOG.debug(vendor_series_mapping.keys())
     return vendor_series_mapping
 
 def check_session(sessiondir, vendor_series_mapping, vendor_checks):
@@ -276,6 +277,8 @@ def check_session(sessiondir, vendor_series_mapping, vendor_checks):
                     check_file(dcm, std_name, checks, scan_results)
             except pydicom.errors.InvalidDicomError:
                 LOG.warning(f"   - {fname} for scan {scan} was not a DICOM file")
+            except Exception as e:
+                LOG.warning(f"   - Failed to process DICOM {fname} for scan {scan}: {e}")
 
         if not ignore_scan:
             LOG.info(f"   - {len(scan_results['passes'])} passes, {len(scan_results['fails'])} fails, {len(scan_results['warnings'])} warnings")
@@ -303,14 +306,17 @@ def check_file(dcm, name, checks, scan_results):
                 continue
             tag_value = find_tag(dcm, tag_from_text(key))
             if not tag_value:
-                LOG.warn(f"Invalid tag for parameter {check.parameter}: {key}")
+                _scan_warning(f"No value for {check.parameter}, tag: {key}", scan_results)
                 continue
             found_tag = True
             value = convert_type(tag_value)
             if value is None:
-                _scan_warning(f"'None' value for parameter: {check.parameter}, tag: {key}", scan_results)
+                _scan_warning(f"Could not convert type of {tag_value} for {check.parameter}, tag: {key}", scan_results)
                 continue
-            check_value(value, check, scan_results)
+            try:
+                check_value(value, check, scan_results)
+            except Exception as e:
+                LOG.warning(f"   - Check failed for {check.parameter}, tag: {key}: {e}")
         if not found_tag:
             _scan_warning(f"No matching DICOM tag found for {check.parameter}", scan_results)
     if matched_checks == 0:
@@ -333,7 +339,7 @@ def check_value(actual, check, scan_results):
     check_txt = f"{check.parameter} {actual} {check.operator} {check.expected}"
     if check.standard:
         check_txt += f" (std: {check.standard})"
-    LOG.info(f"   - Checking: {check_txt}")
+    LOG.debug(f"   - Checking: {check_txt}")
     if t in TYPE_HANDLERS:
         if check.operator == "or":
             possibles = [v for v in check.expected.strip("[]").split(",")]
@@ -386,7 +392,8 @@ def make_xml(session_results, args):
     xml = XML_HEADER
     xml += "  <xnat:label>DICOMQC_%s</xnat:label>" % args.session
     xml += "  <xnat:date>%s</xnat:date>\n" % datetime.datetime.today().strftime('%Y-%m-%d')
-    overall_pass = not any([scan["fails"] for scan in session_results.values()])
+
+    overall_pass = session_results and not any([scan["fails"] for scan in session_results.values()])
     if overall_pass:
         xml += "  <overall_status>PASS</overall_status>\n"
     else:
@@ -663,7 +670,7 @@ def filter_matches(dcm, filter_str):
     """
     if not filter_str:
         return True
-    LOG.info(f"   - Filter checking: {filter_str}")
+    LOG.debug(f"   - Filter checking: {filter_str}")
     pattern = re.compile(r'^\s*(\([0-9A-Fa-f]{4},\s*[0-9A-Fa-f]{4}\))\s*.*?=\s*(\S+)\s*$')
     m = pattern.match(filter_str)
     if not m:
@@ -678,10 +685,10 @@ def filter_matches(dcm, filter_str):
     value = convert_type(tag_value)
     match = TYPE_HANDLERS[type(value)](value, "==", expected)
     if match:
-        LOG.info(f"   - Filter matched: {value} == {expected}")
+        LOG.debug(f"   - Filter matched: {value} == {expected}")
         return True
     else:
-        LOG.info(f"   - Filter not matched: {value} != {expected}")
+        LOG.debug(f"   - Filter not matched: {value} != {expected}")
         return False
 
 def convert_value(dcm_value, vr):
