@@ -7,7 +7,7 @@
     "version": "0.0.1", 
     "schema-version": "1.0", 
     "type": "docker", 
-    "command-line": "python dicom_qc.py --input /input --session #SESSION_ID#",
+    "command-line": "python dicom_qc.py --input /input --session #SESSION_ID# #DEBUG#",
     "inputs": [
         {
             "name": "session-id",
@@ -15,6 +15,16 @@
             "type": "string",
             "required": true,
             "replacement-key": "#SESSION_ID#"
+        },
+        {
+            "name": "debug",
+            "description": "Enable debug mode",
+            "type": "boolean",
+            "required": false,
+	    "default-value": false,
+            "replacement-key": "#DEBUG#",
+	    "true-value": "--debug",
+	    "false-value": ""
         }
     ],
     "outputs": [
